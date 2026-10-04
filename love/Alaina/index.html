@@ -1,77 +1,126 @@
 <html>
 <head>
 <meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Will You Marry Me?</title>
+<style>
+body {margin:0; background:#0000AA; overflow:hidden}
+canvas {width:100vw; height:100vh; image-rendering:pixelated; display:block}
+</style>
 </head>
-<body bgcolor="#0000FF" text="#FFFFFF">
+<body>
+<canvas id="c"></canvas>
+<script>
+// hearts
+var c = document.getElementById("c")
+var g = c.getContext("2d")
+var w, h, t = 0
+var hearts = []
+var q1 = "Will You Marry Me?"
+var q2 = "Or Just Love You Like You Did In Crack Hotels When I First Started This Shit?"
+var n = 0
 
-<script language="JavaScript">
-<!-- Begin
-// Falling Hearts Script
-// Based on the snow script from dynamicdrive / altan
-// Free to use as long as this credit stays intact!!
+var hrt = ["0110110",
+           "1111111",
+           "1111111",
+           "0111110",
+           "0011100",
+           "0001000"]
 
-var no = 25; // number of hearts
-var speed = 20; // smaller number moves the hearts faster
-var heart = "&hearts;";
-
-var dx, xp, yp;    // coordinate and position variables
-var am, stx, sty;  // amplitude and step variables
-var i, doc_width = 800, doc_height = 600;
-
-doc_width = document.body.clientWidth;
-doc_height = document.body.clientHeight;
-if (doc_height < 400) doc_height = window.innerHeight;
-
-dx = new Array();
-xp = new Array();
-yp = new Array();
-am = new Array();
-stx = new Array();
-sty = new Array();
-
-for (i = 0; i < no; ++ i) {
-  dx[i] = 0;                        // set coordinate variables
-  xp[i] = Math.random()*(doc_width-50);  // set position variables
-  yp[i] = Math.random()*doc_height;
-  am[i] = Math.random()*20;         // set amplitude variables
-  stx[i] = 0.02 + Math.random()/10; // set step variables
-  sty[i] = 0.7 + Math.random();     // set step variables
-  document.write("<div id=\"dot"+ i +"\" style=\"POSITION: absolute; Z-INDEX: "+ i +"; VISIBILITY: visible; TOP: 15px; LEFT: 15px;\"><font color=\"#FF0000\" size=\"5\">"+heart+"</font></div>");
+function size() {
+ if (window.innerWidth > window.innerHeight) w = 240
+ else w = 160
+ h = Math.round(window.innerHeight * w / window.innerWidth)
+ c.width = w
+ c.height = h
+ hearts = []
+ for (var i = 0; i < 18; i++) {
+   hearts.push([Math.random()*w, Math.random()*h, 1+Math.random()*2])
+ }
 }
 
-function heartFall() {
-  for (i = 0; i < no; ++ i) {
-    yp[i] += sty[i];
-    if (yp[i] > doc_height-50) {
-      xp[i] = Math.random()*(doc_width-am[i]-30);
-      yp[i] = 0;
-      stx[i] = 0.02 + Math.random()/10;
-      sty[i] = 0.7 + Math.random();
+function heart(x, y) {
+  g.fillStyle = "#FF5555"
+  for (var i = 0; i < 6; i++)
+   for (var j = 0; j < 7; j++)
+    if (hrt[i][j] == "1") g.fillRect(Math.floor(x)+j, Math.floor(y)+i, 1, 1)
+}
+
+// split into lines so it fits
+function lines(s, max) {
+  var wd = s.split(" ")
+  var out = []
+  var l = ""
+  for (var i = 0; i < wd.length; i++) {
+    if (g.measureText(l + " " + wd[i]).width > max && l != "") {
+      out.push(l)
+      l = wd[i]
+    } else {
+      if (l == "") l = wd[i]
+      else l = l + " " + wd[i]
     }
-    dx[i] += stx[i];
-    document.getElementById("dot"+i).style.top = yp[i] + "px";
-    document.getElementById("dot"+i).style.left = xp[i] + am[i]*Math.sin(dx[i]) + "px";
   }
-  setTimeout("heartFall()", speed);
+  out.push(l)
+  return out
 }
 
-heartFall();
-// End -->
+function txt(s, y, px, col) {
+  g.font = "bold " + px + "px monospace"
+  g.fillStyle = col
+  g.textAlign = "center"
+  g.textBaseline = "top"
+  var ls = lines(s, w-10)
+  for (var i = 0; i < ls.length; i++) g.fillText(ls[i], w/2, y + i*(px+3))
+}
+
+function draw() {
+  t++
+  g.fillStyle = "#0000AA"
+  g.fillRect(0, 0, w, h)
+
+  for (var i = 0; i < hearts.length; i++) {
+    hearts[i][1] += hearts[i][2]
+    if (hearts[i][1] > h) {
+      hearts[i][1] = -6
+      hearts[i][0] = Math.random()*w
+    }
+    heart(hearts[i][0] + Math.sin((t+i*5)/3)*2, hearts[i][1])
+  }
+
+  g.textAlign = "left"
+  g.font = "bold 10px monospace"
+  g.fillStyle = "#AAAAAA"
+  var p = "C:\\>LOVE.EXE"
+  g.fillText(p, 3, 3)
+  if (t % 8 < 4) g.fillRect(4 + g.measureText(p).width, 12, 6, 1)
+
+  txt(q1, h/2 - 30, 16, "#FFFF55")
+
+  // 5 sec later
+  if (t > 50) {
+    n = n + 1
+    txt(q2.substring(0, n), h/2 + 12, 10, "#FFFFFF")
+  }
+
+  // no smooth edges, dos didnt have that. snap to the dos colors
+  var pal = [[0,0,170],[255,85,85],[255,255,85],[255,255,255],[170,170,170]]
+  var d = g.getImageData(0, 0, w, h)
+  for (var i = 0; i < d.data.length; i += 4) {
+    var best = 0, bd = 999999
+    for (var k = 0; k < pal.length; k++) {
+      var r = d.data[i]-pal[k][0], gg = d.data[i+1]-pal[k][1], b = d.data[i+2]-pal[k][2]
+      if (r*r+gg*gg+b*b < bd) { bd = r*r+gg*gg+b*b; best = k }
+    }
+    d.data[i] = pal[best][0]; d.data[i+1] = pal[best][1]; d.data[i+2] = pal[best][2]
+  }
+  g.putImageData(d, 0, 0)
+
+  setTimeout(draw, 100)
+}
+
+size()
+window.onresize = size
+draw()
 </script>
-
-<br><br><br><br><br><br>
-<center>
-<font face="Times New Roman" size="7"><b>Will You Marry Me?</b></font>
-<br><br>
-<div id="ordiv" style="display:none">
-<font face="Times New Roman" size="5"><i>Or Just Love You Like You Did In Crack Hotels When I First Started This Shit?</i></font>
-</div>
-</center>
-
-<script language="JavaScript">
-setTimeout("document.getElementById('ordiv').style.display='block'", 5000);
-</script>
-
 </body>
 </html>
